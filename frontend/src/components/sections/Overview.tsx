@@ -1,58 +1,166 @@
-import SectionWrapper from '../layout/SectionWrapper'
-import SectionHeader from '../ui/SectionHeader'
-import StatCard from '../ui/StatCard'
-import { motion } from 'framer-motion'
+import { ArrowIcon } from '../ui/Icons'
 
-const PIPELINE = [
-  { step: '01', title: 'Raw Data Ingestion',     desc: '8 CICIDS2017 PCAP-derived CSV files loaded and concatenated into a single DataFrame.' },
-  { step: '02', title: 'Preprocessing',           desc: 'Column names stripped, labels normalized, ±Inf replaced, NaN rows and duplicates removed.' },
-  { step: '03', title: 'K-Means Clustering',      desc: '50,000-row sample standardized and grouped into k=5 behavioral clusters.' },
-  { step: '04', title: 'DBSCAN Density Analysis', desc: 'Same sample run through DBSCAN (ε=3, minPts=10) to discover arbitrary-shaped clusters and noise.' },
-  { step: '05', title: 'Apriori Rule Mining',     desc: '20,000-row transaction matrix mined for frequent itemsets and high-confidence association rules.' },
+const methods = [
+  {
+    name: 'Find the structure.',
+    algorithm: 'K-MEANS CLUSTERING',
+    description:
+      'Group similar flows into five behavioral clusters. See the larger patterns that individual records can’t reveal.',
+    kind: 'clusters',
+  },
+  {
+    name: 'Explore the edges.',
+    algorithm: 'DBSCAN DENSITY ANALYSIS',
+    description:
+      'Follow regions of dense activity and examine the outliers. Unusual behavior is a starting point for investigation.',
+    kind: 'outliers',
+  },
+  {
+    name: 'Connect the signals.',
+    algorithm: 'APRIORI ASSOCIATION RULES',
+    description:
+      'Explore which traffic characteristics occur together. Read patterns through support, confidence, and lift.',
+    kind: 'rules',
+  },
 ]
-
+function MethodDiagram({ kind }: { kind: string }) {
+  return (
+    <svg viewBox="0 0 300 140" className="method-diagram" aria-hidden="true">
+      <path d="M0 115H300M30 0V140" stroke="currentColor" opacity=".1" />
+      {kind === 'rules' ? (
+        <>
+          {[
+            [70, 35, 150, 70],
+            [70, 105, 150, 70],
+            [150, 70, 240, 30],
+            [150, 70, 240, 110],
+          ].map(([x1, y1, x2, y2], i) => (
+            <line
+              key={i}
+              {...{ x1, y1, x2, y2 }}
+              stroke="#a58ad9"
+              strokeOpacity=".5"
+            />
+          ))}
+          {[
+            [70, 35],
+            [70, 105],
+            [150, 70],
+            [240, 30],
+            [240, 110],
+          ].map(([cx, cy], i) => (
+            <g key={i}>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={i === 2 ? 17 : 10}
+                fill="#15111e"
+                stroke="#9276be"
+              />
+              <circle cx={cx} cy={cy} r="3" fill="#d5baff" />
+            </g>
+          ))}
+        </>
+      ) : (
+        Array.from({ length: 65 }, (_, i) => {
+          const group = i % 3
+          const a = i * 2.39996
+          const r = 7 + (i % 20) * 1.3
+          const outlier = kind === 'outliers' && i % 13 === 0
+          const x = outlier
+            ? 40 + ((i * 37) % 235)
+            : [85, 170, 230][group] + Math.cos(a) * r
+          const y = outlier
+            ? 12 + ((i * 17) % 116)
+            : [65, 96, 40][group] + Math.sin(a) * r * 0.75
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={outlier ? 3 : 2}
+              fill={
+                outlier ? '#e7b77b' : ['#ceb7ff', '#8e73d1', '#67537f'][group]
+              }
+              opacity={outlier ? 1 : 0.75}
+            />
+          )
+        })
+      )}
+    </svg>
+  )
+}
 export default function Overview() {
   return (
-    <SectionWrapper id="overview">
-      <div className="container">
-        <SectionHeader
-          label="Project Overview"
-          title="Three Mining Techniques,"
-          titleAccent="One Dataset."
-          description="SENTINEL applies classical data-mining algorithms to CICIDS2017 to surface hidden patterns in network traffic, reveal attack signatures, and expose behavioral clusters invisible to threshold-based detection."
-        />
-
-        {/* Stats row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '4rem' }}>
-          <StatCard value="2.52M"  label="Total Records"      delay={0}    />
-          <StatCard value="78"     label="Numerical Features"  delay={0.08} accent="var(--accent-blue)"   />
-          <StatCard value="15"     label="Attack Categories"   delay={0.16} accent="var(--accent-red)"    />
-          <StatCard value="50K"    label="Clustering Sample"   delay={0.24} accent="var(--accent-purple)" />
-          <StatCard value="20K"    label="Apriori Sample"      delay={0.32} accent="var(--accent-green)"  />
+    <>
+      <div className="dataset-strip" aria-label="Dataset at a glance">
+        <div>
+          <span className="eyebrow">GROUNDED IN REAL DATA</span>
+          <strong>
+            CICIDS2017<span> / Network flow research</span>
+          </strong>
         </div>
-
-        {/* Pipeline */}
-        <SectionHeader label="Processing Pipeline" title="From Raw PCAPs to" titleAccent="Mined Intelligence" />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          {PIPELINE.map(({ step, title, desc }, i) => (
-            <motion.div
-              key={step}
-              className="card"
-              style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', borderRadius: i === 0 ? '12px 12px 4px 4px' : i === PIPELINE.length - 1 ? '4px 4px 12px 12px' : '4px' }}
-              initial={{ opacity: 0, x: -24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-            >
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--accent-cyan)', opacity: 0.6, flexShrink: 0, paddingTop: '2px' }}>{step}</span>
-              <div>
-                <h3 style={{ fontSize: '1rem', marginBottom: '0.35rem' }}>{title}</h3>
-                <p style={{ fontSize: '0.875rem', margin: 0 }}>{desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        <dl>
+          <div>
+            <dt>Sampled flows</dt>
+            <dd>50,000</dd>
+          </div>
+          <div>
+            <dt>Numerical features</dt>
+            <dd>78</dd>
+          </div>
+          <div>
+            <dt>Mining techniques</dt>
+            <dd>03</dd>
+          </div>
+        </dl>
       </div>
-    </SectionWrapper>
+      <section id="overview" className="approach-section section-wrapper">
+        <div className="container">
+          <div className="section-intro">
+            <div>
+              <span className="eyebrow">
+                <span className="section-number">01 /</span> THE APPROACH
+              </span>
+              <h2>
+                Complex signals.
+                <br />
+                <span className="muted-heading">Clearer understanding.</span>
+              </h2>
+            </div>
+            <p>
+              Network traffic tells a story. SENTINEL brings three complementary
+              perspectives together to help you explore it—one flow at a time.
+            </p>
+          </div>
+          <div className="methods-grid">
+            {methods.map((method, i) => (
+              <article className="method" key={method.kind}>
+                <div className="method-top">
+                  <span>0{i + 1}</span>
+                  <span>{method.algorithm}</span>
+                </div>
+                <MethodDiagram kind={method.kind} />
+                <h3>{method.name}</h3>
+                <p>{method.description}</p>
+                <a
+                  href={method.kind === 'rules' ? '#research' : '#explorer'}
+                  className="method-link"
+                >
+                  {method.kind === 'rules'
+                    ? 'Explore the research'
+                    : 'Explore the data'}
+                  <ArrowIcon />
+                </a>
+              </article>
+            ))}
+          </div>
+          <div className="method-note">
+            <span className="small-cross">+</span> Historical network data.
+            Unsupervised methods. Patterns to investigate—not verdicts.
+          </div>
+        </div>
+      </section>
+    </>
   )
 }

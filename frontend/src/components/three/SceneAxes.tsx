@@ -2,6 +2,7 @@
  * SceneAxes — XYZ axis lines with feature-name labels at the tips.
  * Uses Drei's <Text> for sharp WebGL text rendering.
  */
+import axisFont from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff?url'
 import { Text, Line } from '@react-three/drei'
 
 interface SceneAxesProps {
@@ -28,7 +29,7 @@ export default function SceneAxes({ xLabel, yLabel, zLabel, extent = 5.5 }: Scen
         lineWidth={1}
         transparent opacity={OPACITY}
       />
-      <Text position={[te, 0, 0]} fontSize={FONT_SIZE} color="#00d4ff"
+      <Text font={axisFont} characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /.-_…" position={[te, 0, 0]} fontSize={FONT_SIZE} color="#00d4ff"
         anchorX="left" anchorY="middle" fillOpacity={0.9}>
         {truncate(xLabel)}
       </Text>
@@ -40,7 +41,7 @@ export default function SceneAxes({ xLabel, yLabel, zLabel, extent = 5.5 }: Scen
         lineWidth={1}
         transparent opacity={OPACITY}
       />
-      <Text position={[0, te, 0]} fontSize={FONT_SIZE} color="#00ff88"
+      <Text font={axisFont} characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /.-_…" position={[0, te, 0]} fontSize={FONT_SIZE} color="#00ff88"
         anchorX="center" anchorY="bottom" fillOpacity={0.9}>
         {truncate(yLabel)}
       </Text>
@@ -52,7 +53,7 @@ export default function SceneAxes({ xLabel, yLabel, zLabel, extent = 5.5 }: Scen
         lineWidth={1}
         transparent opacity={OPACITY}
       />
-      <Text position={[0, 0, te]} fontSize={FONT_SIZE} color="#7b2fff"
+      <Text font={axisFont} characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /.-_…" position={[0, 0, te]} fontSize={FONT_SIZE} color="#7b2fff"
         anchorX="center" anchorY="middle" fillOpacity={0.9}>
         {truncate(zLabel)}
       </Text>
@@ -107,7 +108,7 @@ export default function SceneAxes({ xLabel, yLabel, zLabel, extent = 5.5 }: Scen
 
       {/* ── Grid plane (XZ) ───────────────────────────────────────────── */}
       <gridHelper
-        args={[e * 2, 10, '#0a1d3a', '#071428']}
+        args={[e * 2, 10, '#272033', '#17131f']}
         position={[0, -e, 0]}
       />
     </group>

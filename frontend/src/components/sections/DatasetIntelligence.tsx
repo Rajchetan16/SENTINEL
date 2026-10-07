@@ -38,7 +38,7 @@ export default function DatasetIntelligence() {
   const maxCount = LABEL_DIST[0].count
 
   return (
-    <SectionWrapper id="dataset" style={{ background: 'rgba(7,20,40,0.4)' }}>
+    <SectionWrapper id="dataset" style={{ background: 'rgba(17,16,23,0.4)' }}>
       <div className="container">
         <SectionHeader
           label="Dataset Intelligence"
@@ -49,7 +49,7 @@ export default function DatasetIntelligence() {
 
         {/* Label distribution bar chart */}
         <h3 style={{ marginBottom: '1.5rem', fontSize: '1rem', color: 'var(--text-secondary)' }}>
-          Label Distribution · {total.toLocaleString()} total rows
+          Published label distribution · {total.toLocaleString()} rows (approximate)
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '3.5rem' }}>
           {LABEL_DIST.map(({ label, count, color }, i) => {
@@ -57,6 +57,7 @@ export default function DatasetIntelligence() {
             return (
               <motion.div
                 key={label}
+                className="distribution-row"
                 style={{ display: 'grid', gridTemplateColumns: '220px 1fr 100px', gap: '0.75rem', alignItems: 'center' }}
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -85,7 +86,7 @@ export default function DatasetIntelligence() {
 
         {/* Files table */}
         <SectionHeader label="Source Files" title="8 Daily" titleAccent="CSV Captures" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '0.75rem' }}>
           {FILES.map(({ name, rows, note }, i) => (
             <motion.div
               key={name}

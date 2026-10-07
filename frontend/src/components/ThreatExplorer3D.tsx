@@ -14,11 +14,12 @@
  * • "Attacks Only" toggle filters out BENIGN entirely for focused review
  * • Legend shows per-label counts from the currently rendered point set
  */
-import { useState, useMemo, useCallback, useEffect, Suspense } from 'react'
+import { useState, useMemo, useCallback, useEffect, useId, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Stars } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import { useSceneActivity } from '../hooks/useSceneActivity'
 import PointCloud   from './three/PointCloud'
 import SceneAxes    from './three/SceneAxes'
 import HoverTooltip from './three/HoverTooltip'
@@ -32,7 +33,7 @@ import type { ExplorerPoint, VisualizationMode } from '../data/explorerApi'
 import {
   FEATURES, FEATURE_MAP,
   DEFAULT_X, DEFAULT_Y, DEFAULT_Z,
-  DEFAULT_COLOR_FEATURE, DEFAULT_SIZE_FEATURE,
+  DEFAULT_SIZE_FEATURE,
 } from '../data/cicids2017Features'
 
 // ── Mode definitions ──────────────────────────────────────────────────────
@@ -49,10 +50,11 @@ const MODES: { id: VisualizationMode; label: string; desc: string }[] = [
 function FeatureSelect({ label, value, onChange, color }: {
   label: string; value: string; onChange: (v: string) => void; color: string
 }) {
+  const id = useId()
   return (
     <div style={C.selectGroup}>
-      <label style={{ ...C.selectLabel, color }}>{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)} style={C.select}>
+      <label htmlFor={id} style={{ ...C.selectLabel, color }}>{label}</label>
+      <select id={id} value={value} onChange={e => onChange(e.target.value)} style={C.select}>
         {FEATURES.map(f => (
           <option key={f.name} value={f.name}>{f.label}</option>
         ))}
@@ -68,7 +70,7 @@ function ModeSelector({ mode, onChange }: {
     <div style={C.modeRow}>
       {MODES.map(m => (
         <button key={m.id} style={C.modePill(mode === m.id)}
-          onClick={() => onChange(m.id)} title={m.desc}>
+          aria-pressed={mode === m.id} onClick={() => onChange(m.id)} title={m.desc}>
           {m.label}
         </button>
       ))}
@@ -83,6 +85,7 @@ function AttacksOnlyToggle({ value, onChange }: {
   return (
     <div style={C.toggleWrap}>
       <button
+        aria-pressed={!value}
         style={C.togglePill(!value)}
         onClick={() => onChange(false)}
         title="Show all traffic including BENIGN"
@@ -90,6 +93,7 @@ function AttacksOnlyToggle({ value, onChange }: {
         All Traffic
       </button>
       <button
+        aria-pressed={value}
         style={C.togglePill(value)}
         onClick={() => onChange(true)}
         title="Hide BENIGN — show attack flows only"
@@ -184,11 +188,11 @@ function Legend({
 function InfoPanel({ point, xF, yF, zF }: {
   point: ExplorerPoint; xF: string; yF: string; zF: string
 }) {
-  const kColor = KMEANS_COLORS[point.kmeans] ?? '#e8f4fd'
-  const lColor = ATTACK_COLORS[point.label.trim()] ?? '#e8f4fd'
+  const kColor = KMEANS_COLORS[point.kmeans] ?? '#f3f0f6'
+  const lColor = ATTACK_COLORS[point.label.trim()] ?? '#f3f0f6'
   const dColor = point.dbscan === -1
     ? DBSCAN_NOISE_COLOR
-    : (DBSCAN_CORE_COLORS[point.dbscan % DBSCAN_CORE_COLORS.length] ?? '#e8f4fd')
+    : (DBSCAN_CORE_COLORS[point.dbscan % DBSCAN_CORE_COLORS.length] ?? '#f3f0f6')
 
   return (
     <motion.div style={C.infoPanel}
@@ -234,39 +238,37 @@ function fmtVal(v: number | undefined): string {
 
 function LoadingOverlay() {
   return (
-    <div style={{ ...S.canvasWrap, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: '1rem', background: '#020b18' }}>
+    <div className="explorer-canvas" style={{ padding: '24px', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: '1rem', background: '#08080c' }}>
       <motion.div
-        style={{ width: 48, height: 48, border: '2px solid rgba(0,212,255,0.15)',
+        style={{ width: 48, height: 48, border: '2px solid rgba(198,172,245,0.15)',
           borderTop: '2px solid #00d4ff', borderRadius: '50%' }}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
       />
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px',
-        color: '#3a5570', letterSpacing: '0.1em' }}>
+        color: '#8c8599', letterSpacing: '0.1em' }}>
         LOADING REAL DATA…
       </span>
     </div>
   )
 }
 
-function ErrorOverlay({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorOverlay({ onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div style={{ ...S.canvasWrap, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: '1rem', background: '#020b18' }}>
+    <div className="explorer-canvas" style={{ padding: '24px', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: '1rem', background: '#08080c' }}>
       <span style={{ fontSize: '2rem' }}>⚠</span>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#ff3366',
         maxWidth: '360px', textAlign: 'center' }}>
-        {message}
+        Unable to load the network flows.
       </span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#3a5570',
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#8c8599',
         maxWidth: '400px', textAlign: 'center' }}>
-        Start the backend:{' '}
-        <code style={{ color: '#00d4ff' }}>uvicorn main:app --reload</code>
-        {' '}(from the <code style={{ color: '#00d4ff' }}>backend/</code> folder)
+        The dataset could not be reached. Retry the connection, or explore the research below.
       </span>
       <button onClick={onRetry} style={{ marginTop: '0.5rem', padding: '6px 18px',
-        background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)',
+        background: 'rgba(198,172,245,0.1)', border: '1px solid rgba(198,172,245,0.3)',
         borderRadius: '6px', color: '#00d4ff', cursor: 'pointer',
         fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
         Retry
@@ -289,8 +291,7 @@ function Scene({ points, xFeature, yFeature, zFeature, sizeFeature,
 
   return (
     <>
-      <Stars radius={30} depth={50} count={600} factor={2} fade speed={0.4} />
-      <fog attach="fog" args={['#020b18', 18, 40]} />
+      <fog attach="fog" args={['#08080c', 18, 40]} />
       <SceneAxes
         xLabel={FEATURE_MAP[xFeature]?.label ?? xFeature}
         yLabel={FEATURE_MAP[yFeature]?.label ?? yFeature}
@@ -320,6 +321,7 @@ function Scene({ points, xFeature, yFeature, zFeature, sizeFeature,
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function ThreatExplorer3D() {
+  const { ref: sceneRef, active: sceneActive } = useSceneActivity()
   // ── Data state ───────────────────────────────────────────────────────────
   const [basePoints,   setBasePoints]   = useState<ExplorerPoint[]>([])
   const [attackPoints, setAttackPoints] = useState<ExplorerPoint[]>([])
@@ -333,14 +335,12 @@ export default function ThreatExplorer3D() {
   const [xFeature,     setXFeature]     = useState(DEFAULT_X)
   const [yFeature,     setYFeature]     = useState(DEFAULT_Y)
   const [zFeature,     setZFeature]     = useState(DEFAULT_Z)
-  const [colorFeature, setColorFeature] = useState(DEFAULT_COLOR_FEATURE)
   const [sizeFeature,  setSizeFeature]  = useState(DEFAULT_SIZE_FEATURE)
   const [hoveredId,    setHoveredId]    = useState<number | null>(null)
   const [selectedId,   setSelectedId]  = useState<number | null>(null)
   const [showControls, setShowControls] = useState(true)
   const [showLegend,   setShowLegend]   = useState(true)
 
-  void colorFeature  // reserved for future colour-by-feature mode
 
   // ── Load both datasets in parallel on mount ───────────────────────────
   const loadData = useCallback(async () => {
@@ -405,23 +405,22 @@ export default function ThreatExplorer3D() {
   const totalFetched  = mode === 'ATTACK' ? attackPoints.length : basePoints.length
 
   return (
-    <div style={S.root}>
+    <div ref={sceneRef} className="explorer-root" style={S.root}>
       {/* ── Status bar ────────────────────────────────────────────────── */}
       <div style={S.statusBar}>
         {loading ? (
-          <span style={{ color: '#3a5570' }}>⟳ Fetching data from backend…</span>
+          <span style={{ color: '#8c8599' }}>⟳ Fetching data from backend…</span>
         ) : error ? (
           <span style={{ color: '#ff3366' }}>
-            ✗ Backend unavailable — start with{' '}
-            <code>uvicorn main:app --reload</code>
+            The dataset is temporarily unavailable. Please try again.
           </span>
         ) : (
           <>
             <span className="pulse-dot" style={{ display: 'inline-block' }} />
-            <span style={{ color: '#00ff88' }}>
-              LIVE — {renderedCount.toLocaleString()} flows rendered
+            <span style={{ color: '#c0b1cf' }}>
+              {renderedCount.toLocaleString()} sampled flows
               {renderedCount !== totalFetched && ` (${totalFetched.toLocaleString()} fetched)`}
-              {' · '}real CICIDS2017 data
+              {' · '}CICIDS2017 research capture
             </span>
           </>
         )}
@@ -443,9 +442,9 @@ export default function ThreatExplorer3D() {
           <div style={S.toolbarRight}>
             <span style={S.pointCount}>{renderedCount.toLocaleString()} pts</span>
             <button style={S.iconBtn} onClick={() => setShowLegend(v => !v)}
-              title="Toggle legend">🗂</button>
+              aria-label="Toggle legend" aria-pressed={showLegend} title="Toggle legend">≡</button>
             <button style={S.iconBtn} onClick={() => setShowControls(v => !v)}
-              title="Toggle controls">⚙</button>
+              aria-label="Toggle controls" aria-pressed={showControls} title="Toggle controls">⌘</button>
           </div>
         </div>
       )}
@@ -456,11 +455,12 @@ export default function ThreatExplorer3D() {
       ) : error ? (
         <ErrorOverlay message={error} onRetry={loadData} />
       ) : (
-        <div style={S.canvasWrap}>
+        <div className="explorer-canvas">
           <Canvas
+            frameloop={sceneActive ? 'always' : 'demand'}
             camera={{ position: [8, 5, 12], fov: 55 }}
             gl={{ antialias: true, alpha: false }}
-            style={{ background: '#020b18' }}
+            style={{ background: '#08080c' }}
             dpr={[1, 1.5]}
           >
             <Suspense fallback={null}>
@@ -506,13 +506,13 @@ export default function ThreatExplorer3D() {
                   xF={xFeature} yF={yFeature} zF={zFeature}
                 />
                 <button style={S.closeBtn} onClick={() => setSelectedId(null)}
-                  title="Deselect">✕</button>
+                  aria-label="Deselect flow" title="Deselect">✕</button>
               </div>
             )}
           </AnimatePresence>
 
           {/* Hint */}
-          {!hoveredId && !selectedId && (
+          {hoveredId == null && selectedId == null && (
             <div style={S.hint}>
               Drag to rotate · Scroll to zoom · Click a point to inspect
             </div>
@@ -534,7 +534,6 @@ export default function ThreatExplorer3D() {
                 <FeatureSelect label="Y Axis"     value={yFeature}     onChange={setYFeature}     color="#00ff88" />
                 <FeatureSelect label="Z Axis"     value={zFeature}     onChange={setZFeature}     color="#7b2fff" />
                 <FeatureSelect label="Point Size" value={sizeFeature}  onChange={setSizeFeature}  color="#ff9500" />
-                <FeatureSelect label="Color Dim"  value={colorFeature} onChange={setColorFeature} color="#ec4899" />
               </div>
             </motion.div>
           )}
@@ -548,34 +547,33 @@ export default function ThreatExplorer3D() {
 
 const S: Record<string, React.CSSProperties> = {
   root: {
-    width: '100%', background: '#050f1f',
-    border: '1px solid rgba(0,212,255,0.12)', borderRadius: '16px',
+    width: '100%', background: '#0e0d13',
+    border: '1px solid rgba(198,172,245,0.12)', borderRadius: '8px',
     overflow: 'hidden', display: 'flex', flexDirection: 'column',
   },
   statusBar: {
-    background: 'rgba(0,255,136,0.04)', borderBottom: '1px solid rgba(0,255,136,0.12)',
+    background: 'rgba(198,172,245,0.025)', borderBottom: '1px solid rgba(198,172,245,0.12)',
     padding: '6px 16px', fontSize: '11px', fontFamily: 'var(--font-mono)',
     letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '8px',
   },
   toolbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '8px 16px', borderBottom: '1px solid rgba(0,212,255,0.08)',
+    padding: '8px 16px', borderBottom: '1px solid rgba(198,172,245,0.08)',
     flexWrap: 'wrap', gap: '8px',
   },
   toolbarRight: { display: 'flex', alignItems: 'center', gap: '8px' },
   pointCount: {
     fontFamily: 'var(--font-mono)', fontSize: '11px',
-    color: '#3a5570', letterSpacing: '0.06em',
+    color: '#8c8599', letterSpacing: '0.06em',
   },
   iconBtn: {
-    background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.18)',
+    background: 'rgba(198,172,245,0.06)', border: '1px solid rgba(198,172,245,0.18)',
     borderRadius: '6px', padding: '4px 8px', cursor: 'pointer',
-    fontSize: '14px', color: '#e8f4fd', transition: 'background 0.15s',
+    fontSize: '14px', color: '#f3f0f6', transition: 'background 0.15s',
   },
-  canvasWrap: { position: 'relative', width: '100%', height: '520px' },
   legendOverlay: {
     position: 'absolute', top: '12px', left: '12px',
-    background: 'rgba(2,11,24,0.92)', border: '1px solid rgba(0,212,255,0.18)',
+    background: 'rgba(8,8,12,0.92)', border: '1px solid rgba(198,172,245,0.18)',
     borderRadius: '10px', padding: '10px 14px', backdropFilter: 'blur(8px)',
     maxHeight: '480px', overflowY: 'auto',
   },
@@ -591,11 +589,11 @@ const S: Record<string, React.CSSProperties> = {
   },
   hint: {
     position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)',
-    fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#3a5570',
+    fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8c8599',
     pointerEvents: 'none', whiteSpace: 'nowrap',
   },
   controlPanel: {
-    borderTop: '1px solid rgba(0,212,255,0.08)',
+    borderTop: '1px solid rgba(198,172,245,0.08)',
     overflow: 'hidden', padding: '12px 16px',
   },
 }
@@ -627,9 +625,9 @@ const C: {
   modeRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
   modePill: (active) => ({
     padding: '5px 14px', borderRadius: '999px',
-    border:  `1px solid ${active ? 'rgba(0,212,255,0.6)' : 'rgba(0,212,255,0.15)'}`,
-    background: active ? 'rgba(0,212,255,0.12)' : 'transparent',
-    color: active ? '#00d4ff' : '#7a9ab8',
+    border:  `1px solid ${active ? 'rgba(198,172,245,0.6)' : 'rgba(198,172,245,0.15)'}`,
+    background: active ? 'rgba(198,172,245,0.12)' : 'transparent',
+    color: active ? '#d0b6f6' : '#a5a0af',
     fontFamily: 'var(--font-mono)', fontSize: '11px',
     fontWeight: active ? 700 : 400, cursor: 'pointer',
     transition: 'all 0.15s', letterSpacing: '0.04em',
@@ -644,7 +642,7 @@ const C: {
   togglePill: (active) => ({
     padding: '3px 12px', borderRadius: '999px',
     background: active ? 'rgba(255,149,0,0.22)' : 'transparent',
-    color: active ? '#ffab00' : '#7a9ab8',
+    color: active ? '#ffab00' : '#a5a0af',
     border: 'none', fontFamily: 'var(--font-mono)', fontSize: '10px',
     fontWeight: active ? 700 : 400, cursor: 'pointer',
     transition: 'all 0.15s', letterSpacing: '0.04em',
@@ -652,17 +650,17 @@ const C: {
   grid:        { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' },
   selectGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
   selectLabel: { fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' },
-  select:      { background: '#050f1f', border: '1px solid rgba(0,212,255,0.2)', borderRadius: '6px', color: '#e8f4fd', padding: '5px 8px', fontSize: '12px', fontFamily: 'var(--font-mono)', cursor: 'pointer', outline: 'none', width: '100%' },
+  select:      { background: '#0e0d13', border: '1px solid rgba(198,172,245,0.2)', borderRadius: '6px', color: '#f3f0f6', padding: '5px 8px', fontSize: '12px', fontFamily: 'var(--font-mono)', cursor: 'pointer', outline: 'none', width: '100%' },
   legend:      { display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' },
-  legendTitle: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#3a5570', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' },
+  legendTitle: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8c8599', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' },
   legendRow:   { display: 'flex', alignItems: 'center', gap: '7px' },
   legendDot:   { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
-  legendLabel: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#7a9ab8', whiteSpace: 'nowrap', flex: 1 },
-  legendCount: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#3a5570', textAlign: 'right', minWidth: '32px' },
-  infoPanel:      { background: 'rgba(2,11,24,0.93)', border: '1px solid rgba(0,212,255,0.25)', borderRadius: '10px', padding: '12px 14px', minWidth: '200px', backdropFilter: 'blur(8px)' },
-  infoPanelTitle: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#3a5570', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '8px' },
+  legendLabel: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#a5a0af', whiteSpace: 'nowrap', flex: 1 },
+  legendCount: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8c8599', textAlign: 'right', minWidth: '32px' },
+  infoPanel:      { background: 'rgba(8,8,12,0.93)', border: '1px solid rgba(198,172,245,0.25)', borderRadius: '10px', padding: '12px 14px', minWidth: '200px', backdropFilter: 'blur(8px)' },
+  infoPanelTitle: { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8c8599', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '8px' },
   infoRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '2px 0' },
-  infoKey:     { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#3a5570' },
+  infoKey:     { fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8c8599' },
   infoVal:     { fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600 },
-  infoDivider: { height: '1px', background: 'rgba(0,212,255,0.1)', margin: '6px 0' },
+  infoDivider: { height: '1px', background: 'rgba(198,172,245,0.1)', margin: '6px 0' },
 }

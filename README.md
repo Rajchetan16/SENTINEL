@@ -303,6 +303,17 @@ SENTINEL/
 
 ## Frontend Features
 
+### Sentinel Lens interface
+
+The landing page uses a custom Three.js lens and particle sculpture in a violet and charcoal visual system. Its particles are conceptual artwork; the separate explorer displays actual CICIDS2017 records. Scrolling gently brings the artwork into clusters, and pointer movement changes its perspective.
+
+- Responsive navigation and layouts for desktop and mobile.
+- A pause control and support for `prefers-reduced-motion`.
+- Artwork pauses when offscreen or the browser tab is hidden.
+- Locally bundled fonts and a static lens fallback when WebGL cannot initialize.
+- The data explorer and research panels load separately to defer heavier code.
+- Dataset, clustering, association-rule, and limitation panels are accessible through keyboard-operable tabs. Published dataset summaries and illustrative rules remain labeled separately from the sampled explorer data.
+
 ### 3D Behavioral Explorer
 
 - Interactive point cloud where each point is a real CICIDS2017 network flow

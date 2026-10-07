@@ -143,11 +143,11 @@ function DbscanTopClusters() {
       <div style={styles.chartTitle}>Top 10 Clusters by Size</div>
       <ResponsiveContainer width="100%" height={160}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-          <XAxis dataKey="name" tick={{ fill: '#3a5570', fontSize: 10, fontFamily: 'monospace' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#3a5570', fontSize: 10, fontFamily: 'monospace' }}
+          <XAxis dataKey="name" tick={{ fill: '#8c8599', fontSize: 10, fontFamily: 'monospace' }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: '#8c8599', fontSize: 10, fontFamily: 'monospace' }}
             axisLine={false} tickLine={false} width={52}
             tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)} />
-          <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(0,212,255,0.05)' }} />
+          <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(198,172,245,0.05)' }} />
           <Bar dataKey="size" name="Flows" radius={[3, 3, 0, 0]}>
             {data.map((d, i) => <Cell key={i} fill={d.color} />)}
           </Bar>
@@ -182,7 +182,7 @@ function DbscanNoisePie() {
           <Tooltip content={<DarkTooltip />} />
           <Legend
             iconType="circle" iconSize={8}
-            formatter={(v) => <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#7a9ab8' }}>{v}</span>}
+            formatter={(v) => <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#a5a0af' }}>{v}</span>}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -205,13 +205,13 @@ function KMeansBarChart() {
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
           <XAxis dataKey="name"
-            tick={{ fill: '#3a5570', fontSize: 10, fontFamily: 'monospace' }}
+            tick={{ fill: '#8c8599', fontSize: 10, fontFamily: 'monospace' }}
             axisLine={false} tickLine={false} />
           <YAxis
-            tick={{ fill: '#3a5570', fontSize: 10, fontFamily: 'monospace' }}
+            tick={{ fill: '#8c8599', fontSize: 10, fontFamily: 'monospace' }}
             axisLine={false} tickLine={false} width={52}
             tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)} />
-          <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(0,212,255,0.05)' }} />
+          <Tooltip content={<DarkTooltip />} cursor={{ fill: 'rgba(198,172,245,0.05)' }} />
           <Bar dataKey="size" name="Flows" radius={[4, 4, 0, 0]}>
             {data.map((d, i) => <Cell key={i} fill={d.color} />)}
           </Bar>
@@ -225,7 +225,7 @@ function KMeansBarChart() {
 
 export default function ClusteringAnalysis() {
   return (
-    <SectionWrapper id="clustering" style={{ background: 'rgba(7,20,40,0.4)' }}>
+    <SectionWrapper id="clustering" style={{ background: 'rgba(17,16,23,0.4)' }}>
       <div className="container">
 
         <SectionHeader
@@ -271,7 +271,7 @@ export default function ClusteringAnalysis() {
           <SilhouetteMeter score={KMEANS_RESULTS.silhouette} />
 
           {/* Bar chart + cluster legend side by side */}
-          <div style={styles.twoCol}>
+          <div className="responsive-columns" style={styles.twoCol}>
             <KMeansBarChart />
             <div style={styles.clusterList}>
               {KMEANS_RESULTS.clusters.map((c, i) => (
@@ -378,7 +378,7 @@ export default function ClusteringAnalysis() {
           </div>
 
           {/* Charts */}
-          <div style={styles.twoCol}>
+          <div className="responsive-columns" style={styles.twoCol}>
             <DbscanTopClusters />
             <DbscanNoisePie />
           </div>
@@ -396,6 +396,7 @@ export default function ClusteringAnalysis() {
 
         {/* ── Comparison callout ─────────────────────────────────────────── */}
         <motion.div
+          className="comparison-scroll"
           style={styles.compareBox}
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -484,7 +485,7 @@ const styles: Record<string, React.CSSProperties> = {
   silhouetteWrap: {
     marginBottom: '1.5rem',
     padding:      '1rem 1.25rem',
-    background:   'rgba(0,212,255,0.03)',
+    background:   'rgba(198,172,245,0.03)',
     border:       '1px solid var(--border-subtle)',
     borderRadius: '8px',
   },
@@ -650,7 +651,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap:          '0.5rem',
     marginTop:    '1.25rem',
     padding:      '0.6rem 1rem',
-    background:   'rgba(0,212,255,0.03)',
+    background:   'rgba(198,172,245,0.03)',
     border:       '1px solid var(--border-subtle)',
     borderRadius: '6px',
   },
@@ -700,13 +701,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-sans)',
   },
   tooltip: {
-    background:   'rgba(2,11,24,0.95)',
-    border:       '1px solid rgba(0,212,255,0.25)',
+    background:   'rgba(8,8,12,0.95)',
+    border:       '1px solid rgba(198,172,245,0.25)',
     borderRadius: '7px',
     padding:      '8px 12px',
     fontFamily:   'monospace',
     fontSize:     '11px',
-    boxShadow:    '0 0 12px rgba(0,212,255,0.15)',
+    boxShadow:    '0 0 12px rgba(198,172,245,0.15)',
   },
   tooltipLabel: {
     color:        'var(--accent-cyan)',

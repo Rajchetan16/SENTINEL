@@ -4,7 +4,7 @@
  * Rendering differences by mode
  * ─────────────────────────────
  * RAW / KMEANS / DBSCAN
- *   AdditiveBlending — classic neon cyberpunk look, all points equal weight.
+ *   NormalBlending — readable, distinct points without additive washout.
  *
  * ATTACK
  *   NormalBlending  — prevents color addition washing everything to white/cyan.
@@ -75,7 +75,7 @@ const VERT = /* glsl */`
     vColor = color;
     vAlpha = alpha;
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size * (300.0 / -mvPos.z);
+    gl_PointSize = clamp(size * (14.0 / -mvPos.z), 2.0, 22.0);
     gl_Position  = projectionMatrix * mvPos;
   }
 `
@@ -87,8 +87,7 @@ const FRAG = /* glsl */`
   void main() {
     float d = length(gl_PointCoord - vec2(0.5));
     if (d > 0.5) discard;
-    // Additive mode: tight core only to avoid color bleed
-    // Normal mode: wider, softer disk for readable distinct colors
+    // Soft disks retain distinct colors in dense regions.
     float edge = 0.45;
     float core = 0.05;
     float a = smoothstep(edge, core, d) * vAlpha;
@@ -111,7 +110,7 @@ export default function PointCloud({
     vertexColors: true,
     transparent:  true,
     depthWrite:   false,
-    blending:     isAttackMode ? THREE.NormalBlending : THREE.AdditiveBlending,
+    blending:     THREE.NormalBlending,
     vertexShader:   VERT,
     fragmentShader: FRAG,
   }), [isAttackMode])
@@ -144,7 +143,7 @@ export default function PointCloud({
       baseColors[i * 3]   = r;  baseColors[i * 3 + 1]   = g;  baseColors[i * 3 + 2]   = b
 
       // Size — base range 3–12 px, scaled by attackRenderWeight in ATTACK mode
-      const normSize  = (p.features[sizeFeature] ?? 0 - sE[0]) / (sE[1] - sE[0] || 1)
+      const normSize  = ((p.features[sizeFeature] ?? 0) - sE[0]) / (sE[1] - sE[0] || 1)
       const baseSize  = 3 + normSize * 9   // 3–12 px
       const { sizeMult, alphaMult } = isAttackMode
         ? attackRenderWeight(p.label)

@@ -4,18 +4,20 @@ interface SectionHeaderProps {
   titleAccent?: string
   description?: string
 }
-
-export default function SectionHeader({ label, title, titleAccent, description }: SectionHeaderProps) {
+export default function SectionHeader({
+  label,
+  title,
+  titleAccent,
+  description,
+}: SectionHeaderProps) {
   return (
-    <div style={{ marginBottom: '3rem' }}>
+    <div className="section-header">
       <div className="section-label">{label}</div>
       <h2>
         {title}{' '}
-        {titleAccent && <span className="gradient-text">{titleAccent}</span>}
+        {titleAccent && <span className="muted-heading">{titleAccent}</span>}
       </h2>
-      {description && (
-        <p style={{ marginTop: '1rem', maxWidth: '640px' }}>{description}</p>
-      )}
+      {description && <p>{description}</p>}
     </div>
   )
 }
